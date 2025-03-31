@@ -342,6 +342,19 @@ function App() {
 
       const data = await response.json();
       
+      // Send image message through WebSocket first
+      if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN && currentRoom) {
+        console.log('Sending image message:', { roomId: currentRoom.id, imageUrl: data.path }); // Debug log
+        wsRef.current.send(JSON.stringify({
+          type: 'image',
+          content: 'Sent an image',
+          imageUrl: data.path,
+          username: username,
+          roomId: currentRoom.id
+        }));
+      }
+
+      // Add message to local state after successful send
       const newMessage: Message = {
         id: Date.now(),
         content: 'Sent an image',
@@ -351,18 +364,7 @@ function App() {
         imageUrl: data.path
       };
 
-      // Add message to local state immediately
       setMessages(prev => [...prev, newMessage]);
-
-      // Send image message through WebSocket
-      if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
-        wsRef.current.send(JSON.stringify({
-          type: 'image',
-          content: 'Sent an image',
-          imageUrl: data.path,
-          username: username
-        }));
-      }
     } catch (error) {
       console.error('Error uploading image:', error);
       setError('Failed to upload image');
@@ -394,6 +396,20 @@ function App() {
 
       const data = await response.json();
       
+      // Send PDF message through WebSocket first
+      if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN && currentRoom) {
+        console.log('Sending PDF message:', { roomId: currentRoom.id, pdfUrl: data.path }); // Debug log
+        wsRef.current.send(JSON.stringify({
+          type: 'pdf',
+          content: 'Sent a PDF file',
+          pdfUrl: data.path,
+          pdfName: file.name,
+          username: username,
+          roomId: currentRoom.id
+        }));
+      }
+
+      // Add message to local state after successful send
       const newMessage: Message = {
         id: Date.now(),
         content: 'Sent a PDF file',
@@ -404,19 +420,7 @@ function App() {
         pdfName: file.name
       };
 
-      // Add message to local state immediately
       setMessages(prev => [...prev, newMessage]);
-
-      // Send PDF message through WebSocket
-      if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
-        wsRef.current.send(JSON.stringify({
-          type: 'pdf',
-          content: 'Sent a PDF file',
-          pdfUrl: data.path,
-          pdfName: file.name,
-          username: username
-        }));
-      }
     } catch (error) {
       console.error('Error uploading PDF:', error);
       setError('Failed to upload PDF');

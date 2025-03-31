@@ -510,7 +510,7 @@ wss.on('connection', (ws) => {
             content: 'Failed to join room. Please try again.'
           }));
         }
-      } else if (data.type === 'message') {
+      } else if (data.type === 'message' || data.type === 'image' || data.type === 'pdf') {
         // Get current room from clients Map and data
         const clientInfo = clients.get(ws);
         const roomId = data.roomId || clientInfo?.room;
@@ -562,7 +562,7 @@ wss.on('connection', (ws) => {
             timestamp: new Date()
           };
 
-          console.log('Saving message to database:', { roomId, currentUser, content: data.content }); // Debug log
+          console.log('Saving message to database:', { roomId, currentUser, type: data.type, content: data.content }); // Debug log
           
           // Save message to database
           await pool.query(
