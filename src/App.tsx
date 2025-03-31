@@ -162,20 +162,42 @@ function App() {
                 // Handle room join confirmation
                 if (data.type === 'join_room') {
                   console.log('Room joined successfully:', data);
+                  // Update current room if needed
+                  if (data.roomId && (!currentRoom || currentRoom.id !== data.roomId)) {
+                    const room = rooms.find(r => r.id === data.roomId);
+                    if (room) {
+                      setCurrentRoom(room);
+                    }
+                  }
                   return;
                 }
 
-                // Process chat messages
-                if (data.type === 'message' && data.roomId === currentRoom?.id) {
-                  console.log('Processing chat message:', data); // Debug log
+                // Process all message types for the current room
+                if (data.roomId) {
+                  console.log('Processing message:', { messageRoomId: data.roomId, currentRoomId: currentRoom?.id }); // Debug log
+                  
+                  // Update current room if needed
+                  if (!currentRoom || currentRoom.id !== data.roomId) {
+                    const room = rooms.find(r => r.id === data.roomId);
+                    if (room) {
+                      setCurrentRoom(room);
+                    }
+                  }
+
                   const newMessage: Message = {
                     id: Date.now(),
                     content: data.content,
                     username: data.username,
-                    type: 'message',
-                    timestamp: new Date(data.timestamp || Date.now())
+                    type: data.type,
+                    timestamp: new Date(data.timestamp || Date.now()),
+                    imageUrl: data.imageUrl,
+                    pdfUrl: data.pdfUrl,
+                    pdfName: data.pdfName,
+                    emoji: data.emoji
                   };
                   setMessages(prev => [...prev, newMessage]);
+                } else {
+                  console.log('Message missing room ID:', data); // Debug log
                 }
               } catch (error) {
                 console.error('Error processing WebSocket message:', error);
