@@ -43,7 +43,11 @@ const pool = new Pool({
   port: process.env.DB_PORT || 5432,
   database: process.env.DB_NAME || 'chat_db',
   user: process.env.DB_USER || 'postgres',
-  password: process.env.DB_PASSWORD || 'postgres'
+  password: process.env.DB_PASSWORD || 'postgres',
+  ssl: {
+    require: true,  // Ensures a secure connection
+    rejectUnauthorized: false // Optional: Disable certificate validation
+  }
 });
 
 // Initialize database tables
