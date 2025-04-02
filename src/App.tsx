@@ -28,14 +28,14 @@ const WS_URL = (import.meta.env.VITE_WS_URL || 'ws://localhost:5001') + '/ws';
 const API_REGISTER = import.meta.env.VITE_API_REGISTER || '/api/register';
 const API_LOGIN = import.meta.env.VITE_API_LOGIN || '/api/login';
 const API_ROOMS = import.meta.env.VITE_API_ROOMS || '/api/rooms';
-const API_JOIN_ROOM = import.meta.env.VITE_API_JOIN_ROOM || '/api/rooms/join';
-const API_LEAVE_ROOM = import.meta.env.VITE_API_LEAVE_ROOM || '/api/rooms/leave';
+//const API_JOIN_ROOM = import.meta.env.VITE_API_JOIN_ROOM || '/api/rooms/join';
+//const API_LEAVE_ROOM = import.meta.env.VITE_API_LEAVE_ROOM || '/api/rooms/leave';
 const API_UPLOAD = import.meta.env.VITE_API_UPLOAD || '/api/upload';
 
 // WebSocket Events
-const WS_EVENT_MESSAGE = import.meta.env.VITE_WS_EVENT_MESSAGE || 'message';
-const WS_EVENT_SYSTEM = import.meta.env.VITE_WS_EVENT_SYSTEM || 'system';
-const WS_EVENT_ERROR = import.meta.env.VITE_WS_EVENT_ERROR || 'error';
+//const WS_EVENT_MESSAGE = import.meta.env.VITE_WS_EVENT_MESSAGE || 'message';
+//const WS_EVENT_SYSTEM = import.meta.env.VITE_WS_EVENT_SYSTEM || 'system';
+//const WS_EVENT_ERROR = import.meta.env.VITE_WS_EVENT_ERROR || 'error';
 
 function App() {
   const [messages, setMessages] = useState<Message[]>([]);
