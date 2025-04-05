@@ -528,7 +528,7 @@ function App() {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to create room');
+        throw new Error('Room name already exists. Failed to create room.');
       }
 
       const data = await response.json();
@@ -537,7 +537,7 @@ function App() {
       setNewRoomName('');
       setError('');
     } catch (error) {
-      setError(error instanceof Error ? error.message : 'Failed to create room');
+      setError(error instanceof Error ? error.message : 'Room name already exists. Failed to create room.');
     }
   };
 
@@ -769,249 +769,264 @@ function App() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-violet-500 via-fuchsia-500 to-cyan-500 p-4">
+    <div className="min-h-screen bg-gradient-to-br from-violet-500 via-fuchsia-500 to-cyan-500 p-2 sm:p-4">
       {isLoggedIn && (
-        <div className="flex h-[calc(100vh-2rem)] bg-white/20 backdrop-blur-xl rounded-3xl shadow-2xl overflow-hidden border border-white/30">
-          {/* Sidebar */}
-          <div className="w-72 bg-white/10 p-6 border-r border-white/20">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-white text-xl font-semibold">Chat Rooms</h2>
-              <div className="flex space-x-2">
-                <button
-                  onClick={() => setShowCreateRoom(true)}
-                  className="bg-white/20 hover:bg-white/30 text-white px-4 py-2 rounded-xl text-sm transition-all duration-200 border border-white/30"
-                >
-                  Create Room
-                </button>
-                <button
-                  onClick={handleLogout}
-                  className="bg-red-400/30 hover:bg-red-400/40 text-red-50 px-4 py-2 rounded-xl text-sm transition-all duration-200 border border-red-400/40"
-                >
-                  Logout
-                </button>
-              </div>
-            </div>
-
-            {showCreateRoom && (
-              <form onSubmit={handleCreateRoom} className="mb-6 space-y-3">
-                <input
-                  type="text"
-                  value={newRoomName}
-                  onChange={(e) => setNewRoomName(e.target.value)}
-                  placeholder="Room name"
-                  className="w-full p-3 bg-white/20 border border-white/30 rounded-xl text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-white/40 focus:border-transparent transition-all duration-200"
-                  required
-                />
+        <div className="flex flex-col sm:flex-row h-[calc(100vh-1rem)] sm:h-[calc(100vh-2rem)] bg-white/20 backdrop-blur-xl rounded-3xl shadow-2xl overflow-hidden border border-white/30">
+          {/* Chat Rooms Screen */}
+          {!currentRoom && (
+            <div className="w-full h-full bg-white/10 p-4 sm:p-6 flex flex-col">
+              <div className="flex justify-between items-center mb-6 flex-shrink-0">
+                <h2 className="text-white text-xl font-semibold">Chat Rooms</h2>
                 <div className="flex space-x-2">
                   <button
-                    type="submit"
-                    className="flex-1 py-2 bg-gradient-to-r from-white/30 to-white/20 text-white rounded-xl hover:from-white/40 hover:to-white/30 focus:outline-none focus:ring-2 focus:ring-white/40 transition-all duration-200 border border-white/30"
+                    onClick={() => setShowCreateRoom(true)}
+                    className="bg-white/20 hover:bg-white/30 text-white px-3 sm:px-4 py-2 rounded-xl text-sm transition-all duration-200 border border-white/30"
                   >
-                    Create
+                    Create Room
                   </button>
                   <button
-                    type="button"
-                    onClick={() => {
-                      setShowCreateRoom(false);
-                      setNewRoomName('');
-                    }}
-                    className="flex-1 py-2 bg-white/10 text-white/90 rounded-xl hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/40 transition-all duration-200 border border-white/30"
+                    onClick={handleLogout}
+                    className="bg-red-400/30 hover:bg-red-400/40 text-red-50 px-3 sm:px-4 py-2 rounded-xl text-sm transition-all duration-200 border border-red-400/40"
                   >
-                    Cancel
+                    Logout
                   </button>
                 </div>
-              </form>
-            )}
+              </div>
 
-            <div className="space-y-2">
-              {rooms.map(room => (
-                <button
-                  key={room.id}
-                  onClick={() => handleJoinRoom(room)}
-                  className={`w-full text-left p-3 rounded-xl transition-all duration-200 border ${
-                    currentRoom?.id === room.id
-                      ? 'bg-white/30 text-white border-white/40'
-                      : 'text-white/90 hover:bg-white/20 border-white/20 hover:border-white/30'
-                  }`}
-                >
-                  <div className="flex justify-between items-center">
-                    <span className="font-medium">{room.name}</span>
-                    <span className="text-xs bg-white/20 px-2 py-1 rounded-full">
-                      {room.member_count}
-                    </span>
+              {showCreateRoom && (
+                <form onSubmit={handleCreateRoom} className="mb-6 space-y-3 flex-shrink-0">
+                  {error && (
+                    <div className="p-3 bg-red-400/30 text-red-50 rounded-xl text-sm border border-red-400/40">
+                      {error}
+                    </div>
+                  )}
+                  <input
+                    type="text"
+                    value={newRoomName}
+                    onChange={(e) => {
+                      setNewRoomName(e.target.value);
+                      setError(''); // Clear error when user starts typing
+                    }}
+                    placeholder="Room name"
+                    className="w-full p-3 bg-white/20 border border-white/30 rounded-xl text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-white/40 focus:border-transparent transition-all duration-200"
+                    required
+                  />
+                  <div className="flex space-x-2">
+                    <button
+                      type="submit"
+                      className="flex-1 py-2 bg-gradient-to-r from-white/30 to-white/20 text-white rounded-xl hover:from-white/40 hover:to-white/30 focus:outline-none focus:ring-2 focus:ring-white/40 transition-all duration-200 border border-white/30"
+                    >
+                      Create
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowCreateRoom(false);
+                        setNewRoomName('');
+                        setError('');
+                      }}
+                      className="flex-1 py-2 bg-white/10 text-white/90 rounded-xl hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/40 transition-all duration-200 border border-white/30"
+                    >
+                      Cancel
+                    </button>
                   </div>
-                </button>
-              ))}
-            </div>
-          </div>
+                </form>
+              )}
 
-          {/* Main Chat Area */}
-          <div className="flex-1 flex flex-col">
-            {currentRoom ? (
-              <>
-                <div className="p-6 border-b border-white/20 flex justify-between items-center">
-                  <h2 className="text-white text-xl font-semibold">{currentRoom.name}</h2>
+              <div className="space-y-2 overflow-y-auto flex-1 pr-2 -mr-2">
+                {rooms.map(room => (
+                  <button
+                    key={room.id}
+                    onClick={() => handleJoinRoom(room)}
+                    className={`w-full text-left p-3 rounded-xl transition-all duration-200 border ${
+                      currentRoom?.id === room.id
+                        ? 'bg-white/30 text-white border-white/40'
+                        : 'text-white/90 hover:bg-white/20 border-white/20 hover:border-white/30'
+                    }`}
+                  >
+                    <div className="flex justify-between items-center">
+                      <span className="font-medium truncate mr-2">{room.name}</span>
+                      <span className="text-xs bg-white/20 px-2 py-1 rounded-full flex-shrink-0">
+                        {room.member_count}
+                      </span>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Chat Screen */}
+          {currentRoom && (
+            <div className="w-full h-full flex flex-col">
+              <div className="p-4 sm:p-6 border-b border-white/20 flex flex-col sm:flex-row justify-between items-center gap-4">
+                <div className="flex items-center justify-between w-full sm:w-auto">
+                  <h2 className="text-white text-xl font-semibold truncate max-w-[200px] sm:max-w-none">{currentRoom.name}</h2>
+                </div>
+                <div className="flex items-center gap-2 ml-auto">
+                  <button
+                    onClick={() => setCurrentRoom(null)}
+                    className="bg-white/20 hover:bg-white/30 text-white px-3 sm:px-4 py-2 rounded-xl text-sm transition-all duration-200 border border-white/30"
+                  >
+                    Back to Rooms
+                  </button>
                   <button
                     onClick={handleLeaveRoom}
-                    className="bg-red-400/30 hover:bg-red-400/40 text-red-50 px-4 py-2 rounded-xl text-sm transition-all duration-200 border border-red-400/40"
+                    className="bg-red-400/30 hover:bg-red-400/40 text-red-50 px-3 sm:px-4 py-2 rounded-xl text-sm transition-all duration-200 border border-red-400/40"
                   >
                     Leave Room
                   </button>
                 </div>
+              </div>
 
-                <div className="flex-1 overflow-y-auto p-6 space-y-4">
-                  {messages.map((message) => (
-                    <div key={message.id}>
+              <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4">
+                {messages.map((message) => (
+                  <div key={message.id}>
+                    <div
+                      className={`flex ${
+                        message.type === 'system' ? 'justify-center' : 
+                        message.username === username ? 'justify-end' : 'justify-start'
+                      }`}
+                    >
                       <div
-                        className={`flex ${
-                          message.type === 'system' ? 'justify-center' : 
-                          message.username === username ? 'justify-end' : 'justify-start'
+                        className={`max-w-[85%] sm:max-w-[70%] rounded-2xl p-3 sm:p-4 shadow-lg backdrop-blur-sm border ${
+                          message.type === 'system'
+                            ? 'bg-white/30 text-white text-sm border-white/30'
+                            : message.username === username
+                            ? 'bg-gradient-to-r from-indigo-400 to-purple-400 text-white border-transparent'
+                            : 'bg-white/20 text-white border-white/30'
                         }`}
                       >
-                        <div
-                          className={`max-w-[70%] rounded-2xl p-4 shadow-lg backdrop-blur-sm border ${
-                            message.type === 'system'
-                              ? 'bg-white/30 text-white text-sm border-white/30'
-                              : message.username === username
-                              ? 'bg-gradient-to-r from-indigo-400 to-purple-400 text-white border-transparent'
-                              : 'bg-white/20 text-white border-white/30'
-                          }`}
-                        >
-                          <div className="text-xs font-medium opacity-90 mb-1">
-                            {message.username}
+                        <div className="text-xs font-medium opacity-90 mb-1">
+                          {message.username}
+                        </div>
+                        {message.type === 'message' && (
+                          <p className="text-sm whitespace-pre-wrap break-words">{message.content}</p>
+                        )}
+                        {message.type === 'system' && (
+                          <p className="text-sm whitespace-pre-wrap break-words">{message.content}</p>
+                        )}
+                        {message.type === 'image' && message.imageUrl && (
+                          <div className="mb-2 relative group">
+                            <img 
+                              src={`${API_BASE_URL}${message.imageUrl}`}
+                              alt="Shared image"
+                              className="max-w-full rounded-xl shadow-md"
+                            />
+                            <button
+                              onClick={() => message.imageUrl && handleFileDownload(message.imageUrl, message.imageUrl.split('/').pop() || 'image')}
+                              className="absolute bottom-3 right-3 bg-black/40 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-all duration-200 hover:bg-black/60 hover:scale-110"
+                              title="Download image"
+                            >
+                              ⬇️
+                            </button>
                           </div>
-                          {message.type === 'message' && (
-                            <p className="text-sm whitespace-pre-wrap break-words">{message.content}</p>
-                          )}
-                          {message.type === 'system' && (
-                            <p className="text-sm whitespace-pre-wrap break-words">{message.content}</p>
-                          )}
-                          {message.type === 'image' && message.imageUrl && (
-                            <div className="mb-2 relative group">
-                              <img 
-                                src={`${API_BASE_URL}${message.imageUrl}`}
-                                alt="Shared image"
-                                className="max-w-full rounded-xl shadow-md"
-                              />
+                        )}
+                        {message.type === 'pdf' && message.pdfUrl && (
+                          <div className="mb-2 relative group">
+                            <div className="flex items-center space-x-3 p-3 bg-white/20 rounded-xl shadow-md hover:shadow-lg transition-shadow duration-200 border border-white/30">
+                              <span className="text-3xl">📄</span>
+                              <span className="text-sm font-medium truncate">{message.pdfName}</span>
                               <button
-                                onClick={() => message.imageUrl && handleFileDownload(message.imageUrl, message.imageUrl.split('/').pop() || 'image')}
-                                className="absolute bottom-3 right-3 bg-black/40 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-all duration-200 hover:bg-black/60 hover:scale-110"
-                                title="Download image"
+                                onClick={() => message.pdfUrl && handleFileDownload(message.pdfUrl, message.pdfName || 'document.pdf')}
+                                className="ml-auto bg-gradient-to-r from-indigo-400 to-purple-400 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-all duration-200 hover:scale-110"
+                                title="Download PDF"
                               >
                                 ⬇️
                               </button>
                             </div>
-                          )}
-                          {message.type === 'pdf' && message.pdfUrl && (
-                            <div className="mb-2 relative group">
-                              <div className="flex items-center space-x-3 p-3 bg-white/20 rounded-xl shadow-md hover:shadow-lg transition-shadow duration-200 border border-white/30">
-                                <span className="text-3xl">📄</span>
-                                <span className="text-sm font-medium">{message.pdfName}</span>
-                                <button
-                                  onClick={() => message.pdfUrl && handleFileDownload(message.pdfUrl, message.pdfName || 'document.pdf')}
-                                  className="ml-auto bg-gradient-to-r from-indigo-400 to-purple-400 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-all duration-200 hover:scale-110"
-                                  title="Download PDF"
-                                >
-                                  ⬇️
-                                </button>
-                              </div>
-                            </div>
-                          )}
-                          {message.type === 'emoji' && message.emoji && (
-                            <div className="flex items-center space-x-2">
-                              <span className="text-4xl">{message.emoji}</span>
-                            </div>
-                          )}
-                          <span className="text-xs opacity-80 mt-1 block">
-                            {message.timestamp.toLocaleTimeString([], { 
-                              hour: '2-digit', 
-                              minute: '2-digit',
-                              hour12: true 
-                            })}
-                          </span>
-                        </div>
+                          </div>
+                        )}
+                        {message.type === 'emoji' && message.emoji && (
+                          <div className="flex items-center space-x-2">
+                            <span className="text-4xl">{message.emoji}</span>
+                          </div>
+                        )}
+                        <span className="text-xs opacity-80 mt-1 block">
+                          {message.timestamp.toLocaleTimeString([], { 
+                            hour: '2-digit', 
+                            minute: '2-digit',
+                            hour12: true 
+                          })}
+                        </span>
                       </div>
                     </div>
-                  ))}
-                  <div ref={messagesEndRef} />
-                </div>
-
-                <form onSubmit={handleSendMessage} className="p-6 border-t border-white/20">
-                  <div className="flex space-x-3">
-                    <input
-                      type="text"
-                      value={inputMessage}
-                      onChange={(e) => setInputMessage(e.target.value)}
-                      placeholder="Type your message..."
-                      className="flex-1 p-3 bg-white/20 border border-white/30 rounded-xl text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-white/40 focus:border-transparent transition-all duration-200"
-                      disabled={!isConnected}
-                    />
-                    <input
-                      type="file"
-                      ref={imageInputRef}
-                      onChange={handleImageUpload}
-                      accept="image/*"
-                      className="hidden"
-                      disabled={!isConnected || isUploading}
-                    />
-                    <input
-                      type="file"
-                      ref={pdfInputRef}
-                      onChange={handlePdfUpload}
-                      accept=".pdf"
-                      className="hidden"
-                      disabled={!isConnected || isUploading}
-                    />
-                    <div className="relative" ref={emojiPickerRef}>
-                      <button
-                        type="button"
-                        onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-                        className="px-4 py-2 bg-white/20 hover:bg-white/30 text-white rounded-xl transition-all duration-200 border border-white/30"
-                        disabled={!isConnected}
-                        title="Add emoji"
-                      >
-                        😊
-                      </button>
-                      {showEmojiPicker && (
-                        <div className="absolute bottom-full right-0 mb-2 z-50">
-                          <EmojiPicker onEmojiClick={handleEmojiClick} />
-                        </div>
-                      )}
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => imageInputRef.current?.click()}
-                      className="px-4 py-2 bg-white/20 hover:bg-white/30 text-white rounded-xl transition-all duration-200 border border-white/30"
-                      disabled={!isConnected || isUploading}
-                      title="Upload image"
-                    >
-                      {isUploading ? 'Uploading...' : '📷'}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => pdfInputRef.current?.click()}
-                      className="px-4 py-2 bg-white/20 hover:bg-white/30 text-white rounded-xl transition-all duration-200 border border-white/30"
-                      disabled={!isConnected || isUploading}
-                      title="Upload PDF"
-                    >
-                      {isUploading ? 'Uploading...' : '📄'}
-                    </button>
-                    <button
-                      type="submit"
-                      className="px-6 py-2 bg-gradient-to-r from-indigo-400 to-purple-400 text-white rounded-xl hover:from-indigo-500 hover:to-purple-500 focus:outline-none focus:ring-2 focus:ring-white/40 transition-all duration-200"
-                      disabled={!isConnected}
-                    >
-                      Send
-        </button>
-      </div>
-                </form>
-              </>
-            ) : (
-              <div className="flex-1 flex items-center justify-center text-white/80 text-lg">
-                Select a chat room to start messaging
+                  </div>
+                ))}
+                <div ref={messagesEndRef} />
               </div>
-            )}
-          </div>
+
+              <form onSubmit={handleSendMessage} className="p-4 sm:p-6 border-t border-white/20">
+                <div className="flex flex-wrap gap-2">
+                  <input
+                    type="text"
+                    value={inputMessage}
+                    onChange={(e) => setInputMessage(e.target.value)}
+                    placeholder="Type your message..."
+                    className="flex-1 min-w-[200px] p-3 bg-white/20 border border-white/30 rounded-xl text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-white/40 focus:border-transparent transition-all duration-200"
+                    disabled={!isConnected}
+                  />
+                  <input
+                    type="file"
+                    ref={imageInputRef}
+                    onChange={handleImageUpload}
+                    accept="image/*"
+                    className="hidden"
+                    disabled={!isConnected || isUploading}
+                  />
+                  <input
+                    type="file"
+                    ref={pdfInputRef}
+                    onChange={handlePdfUpload}
+                    accept=".pdf"
+                    className="hidden"
+                    disabled={!isConnected || isUploading}
+                  />
+                  <div className="relative" ref={emojiPickerRef}>
+                    <button
+                      type="button"
+                      onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+                      className="px-3 sm:px-4 py-2 bg-white/20 hover:bg-white/30 text-white rounded-xl transition-all duration-200 border border-white/30"
+                      disabled={!isConnected}
+                      title="Add emoji"
+                    >
+                      😊
+                    </button>
+                    {showEmojiPicker && (
+                      <div className="absolute bottom-full right-0 mb-2 z-50">
+                        <EmojiPicker onEmojiClick={handleEmojiClick} />
+                      </div>
+                    )}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => imageInputRef.current?.click()}
+                    className="px-3 sm:px-4 py-2 bg-white/20 hover:bg-white/30 text-white rounded-xl transition-all duration-200 border border-white/30"
+                    disabled={!isConnected || isUploading}
+                    title="Upload image"
+                  >
+                    {isUploading ? 'Uploading...' : '📷'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => pdfInputRef.current?.click()}
+                    className="px-3 sm:px-4 py-2 bg-white/20 hover:bg-white/30 text-white rounded-xl transition-all duration-200 border border-white/30"
+                    disabled={!isConnected || isUploading}
+                    title="Upload PDF"
+                  >
+                    {isUploading ? 'Uploading...' : '📄'}
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-4 sm:px-6 py-2 bg-gradient-to-r from-indigo-400 to-purple-400 text-white rounded-xl hover:from-indigo-500 hover:to-purple-500 focus:outline-none focus:ring-2 focus:ring-white/40 transition-all duration-200"
+                    disabled={!isConnected}
+                  >
+                    Send
+                  </button>
+                </div>
+              </form>
+            </div>
+          )}
         </div>
       )}
     </div>
