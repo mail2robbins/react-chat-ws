@@ -71,6 +71,7 @@ function App() {
   const [currentRoom, setCurrentRoom] = useState<Room | null>(null);
   const [showCreateRoom, setShowCreateRoom] = useState(false);
   const [newRoomName, setNewRoomName] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -782,7 +783,7 @@ function App() {
         <div className="flex flex-col sm:flex-row h-[calc(100vh-1rem)] sm:h-[calc(100vh-2rem)] bg-white/20 backdrop-blur-xl rounded-3xl shadow-2xl overflow-hidden border border-white/30">
           {/* Chat Rooms Screen */}
           {!currentRoom && (
-            <div className="w-full h-full bg-white/10 p-4 sm:p-6 flex flex-col">
+            <div className="w-full lg:w-[400px] h-full bg-white/10 p-4 sm:p-6 flex flex-col">
               <div className="flex justify-between items-center mb-6 flex-shrink-0">
                 <h2 className="text-white text-xl font-semibold">Chat Rooms</h2>
                 <div className="flex space-x-2">
@@ -842,7 +843,18 @@ function App() {
               )}
 
               <div className="space-y-2 overflow-y-auto flex-1 pr-2 -mr-2">
-                {rooms.map((room: Room) => (
+                <div className="mb-4">
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="Search rooms..."
+                    className="w-full p-3 bg-white/20 border border-white/30 rounded-xl text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-white/40 focus:border-transparent transition-all duration-200"
+                  />
+                </div>
+                {rooms
+                  .filter(room => room.name.toLowerCase().includes(searchQuery.toLowerCase()))
+                  .map((room: Room) => (
                   <button
                     key={room.id}
                     onClick={() => handleJoinRoom(room)}
