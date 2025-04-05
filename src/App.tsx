@@ -1,6 +1,13 @@
 import { useState, useEffect, useRef } from 'react'
 import EmojiPicker, { EmojiClickData } from 'emoji-picker-react';
 
+export interface Room {
+  id: number;
+  name: string;
+  created_by: string;
+  member_count: number;
+}
+
 interface Message {
   id: number;
   content: string;
@@ -11,13 +18,6 @@ interface Message {
   pdfUrl?: string;
   pdfName?: string;
   emoji?: string;
-}
-
-interface Room {
-  id: number;
-  name: string;
-  created_by: string;
-  member_count: number;
 }
 
 // API Configuration
@@ -237,7 +237,14 @@ function App() {
         throw new Error('Failed to fetch rooms');
       }
       const data = await response.json();
-      setRooms(data);
+      // Ensure the data is an array of Room objects
+      const rooms: Room[] = Array.isArray(data) ? data.map((room: any) => ({
+        id: room.id,
+        name: room.name,
+        created_by: room.created_by,
+        member_count: room.member_count
+      })) : [];
+      setRooms(rooms);
     } catch (error) {
       console.error('Error fetching rooms:', error);
       setError('Failed to fetch chat rooms');
@@ -581,6 +588,7 @@ function App() {
         throw new Error(data.error || 'Failed to join room');
       }
 
+      console.log('Room joined successfully:', data.room);
       // Update current room with the response data
       setCurrentRoom(data.room);
 
@@ -834,15 +842,11 @@ function App() {
               )}
 
               <div className="space-y-2 overflow-y-auto flex-1 pr-2 -mr-2">
-                {rooms.map(room => (
+                {rooms.map((room: Room) => (
                   <button
                     key={room.id}
                     onClick={() => handleJoinRoom(room)}
-                    className={`w-full text-left p-3 rounded-xl transition-all duration-200 border ${
-                      currentRoom?.id === room.id
-                        ? 'bg-white/30 text-white border-white/40'
-                        : 'text-white/90 hover:bg-white/20 border-white/20 hover:border-white/30'
-                    }`}
+                    className={`w-full text-left p-3 rounded-xl transition-all duration-200 border text-white/90 hover:bg-white/20 border-white/20 hover:border-white/30`}
                   >
                     <div className="flex justify-between items-center">
                       <span className="font-medium truncate mr-2">{room.name}</span>
