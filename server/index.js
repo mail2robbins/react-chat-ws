@@ -84,14 +84,19 @@ async function initializeDatabase() {
       );
     `);
 
-    // Create messages table
+    // Drop and recreate messages table to add image_url column
+    await pool.query(`DROP TABLE IF EXISTS messages;`);
+    
+    // Create messages table with image_url column
     await pool.query(`
-      CREATE TABLE IF NOT EXISTS messages (
+      CREATE TABLE messages (
         id SERIAL PRIMARY KEY,
         room_id INTEGER REFERENCES chat_rooms(id) ON DELETE CASCADE,
         username VARCHAR(50) REFERENCES users(username) ON DELETE CASCADE,
         content TEXT NOT NULL,
         type VARCHAR(20) NOT NULL,
+        image_url TEXT,
+        emoji TEXT,
         created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
       );
     `);
@@ -104,22 +109,28 @@ async function initializeDatabase() {
 }
 
 // File upload configuration
-const uploadDir = process.env.UPLOAD_DIR || 'uploads';
+const uploadDir = path.join(__dirname, process.env.UPLOAD_DIR || 'uploads');
 const maxFileSize = parseInt(process.env.MAX_FILE_SIZE) || 5242880; // 5MB default
+
+console.log('Upload directory:', uploadDir); // Debug log
 
 // Create uploads directory if it doesn't exist
 if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir);
+  console.log('Creating uploads directory:', uploadDir); // Debug log
+  fs.mkdirSync(uploadDir, { recursive: true });
 }
 
 // Configure multer for file uploads
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
+    console.log('Saving file to:', uploadDir); // Debug log
     cb(null, uploadDir);
   },
   filename: (req, file, cb) => {
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
+    const filename = file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname);
+    console.log('Generated filename:', filename); // Debug log
+    cb(null, filename);
   }
 });
 
@@ -131,7 +142,7 @@ const upload = multer({
 });
 
 // Serve static files from uploads directory
-app.use('/uploads', express.static('uploads'));
+app.use('/uploads', express.static(uploadDir));
 
 // User registration endpoint
 app.post('/api/register', async (req, res) => {
@@ -230,10 +241,29 @@ app.post('/api/login', async (req, res) => {
 
 // Image upload endpoint
 app.post('/upload/image', upload.single('image'), (req, res) => {
+  console.log('Image upload request received:', req.file); // Debug log
+  console.log('Request headers:', req.headers); // Debug log
+  console.log('Request body:', req.body); // Debug log
+  
   if (!req.file) {
+    console.log('No file uploaded'); // Debug log
     return res.status(400).json({ error: 'No file uploaded' });
   }
-  res.json({ path: `/uploads/${req.file.filename}` });
+
+  try {
+    const filePath = `/uploads/${req.file.filename}`;
+    console.log('File saved at:', filePath); // Debug log
+    console.log('Full file details:', {
+      path: req.file.path,
+      filename: req.file.filename,
+      mimetype: req.file.mimetype,
+      size: req.file.size
+    }); // Debug log
+    res.json({ path: filePath });
+  } catch (error) {
+    console.error('Error handling image upload:', error);
+    res.status(500).json({ error: 'Failed to process image upload' });
+  }
 });
 
 // PDF upload endpoint
@@ -497,7 +527,8 @@ wss.on('connection', (ws) => {
               content: message.content,
               username: message.username,
               roomId: message.room_id,
-              timestamp: message.created_at
+              timestamp: message.created_at,
+              imageUrl: message.image_url
             }));
           });
 
@@ -559,19 +590,42 @@ wss.on('connection', (ws) => {
             console.log('Updated client room state:', { currentUser, roomId }); // Debug log
           }
 
+          // Prepare message data based on type
+          let messageContent = data.content;
+          let messageType = data.type;
+          let imageUrl = null;
+
+          if (data.type === 'image' && data.imageUrl) {
+            // Ensure the file path is properly formatted
+            imageUrl = data.imageUrl.startsWith('/') ? data.imageUrl : `/${data.imageUrl}`;
+            console.log('Processing image message:', { type: data.type, imageUrl }); // Debug log
+          }
+
           const messageData = {
-            ...data,
+            type: messageType,
+            content: messageContent,
             username: currentUser,
             roomId: roomId,
             timestamp: new Date()
           };
 
-          console.log('Saving message to database:', { roomId, currentUser, type: data.type, content: data.content }); // Debug log
+          // Add additional fields for file types and emoji
+          if (data.type === 'pdf' && data.pdfName) {
+            messageData.pdfName = data.pdfName;
+          }
+          if (data.type === 'emoji' && data.emoji) {
+            messageData.emoji = data.emoji;
+          }
+          if (imageUrl) {
+            messageData.imageUrl = imageUrl;
+          }
+
+          console.log('Saving message to database:', { roomId, currentUser, type: messageType, content: messageContent, imageUrl }); // Debug log
           
           // Save message to database
           await pool.query(
-            'INSERT INTO messages (room_id, username, content, type) VALUES ($1, $2, $3, $4)',
-            [roomId, currentUser, data.content, data.type]
+            'INSERT INTO messages (room_id, username, content, type, image_url, emoji) VALUES ($1, $2, $3, $4, $5, $6)',
+            [roomId, currentUser, messageContent, messageType, imageUrl, data.type === 'emoji' ? data.emoji : null]
           );
           console.log('Message saved successfully'); // Debug log
 

@@ -30,7 +30,7 @@ const API_LOGIN = import.meta.env.VITE_API_LOGIN || '/api/login';
 const API_ROOMS = import.meta.env.VITE_API_ROOMS || '/api/rooms';
 //const API_JOIN_ROOM = import.meta.env.VITE_API_JOIN_ROOM || '/api/rooms/join';
 //const API_LEAVE_ROOM = import.meta.env.VITE_API_LEAVE_ROOM || '/api/rooms/leave';
-const API_UPLOAD = import.meta.env.VITE_API_UPLOAD || '/api/upload';
+const API_UPLOAD = import.meta.env.VITE_API_UPLOAD || '/upload';
 
 // WebSocket Events
 //const WS_EVENT_MESSAGE = import.meta.env.VITE_WS_EVENT_MESSAGE || 'message';
@@ -356,29 +356,35 @@ function App() {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    console.log('Starting image upload:', { filename: file.name, size: file.size }); // Debug log
     setIsUploading(true);
     const formData = new FormData();
     formData.append('image', file);
 
     try {
-      const response = await fetch(`${API_BASE_URL}${API_UPLOAD}/image`, {
+      console.log('Sending image to server:', `${API_BASE_URL}/upload/image`); // Debug log
+      const response = await fetch(`${API_BASE_URL}/upload/image`, {
         method: 'POST',
         body: formData,
       });
 
       if (!response.ok) {
-        throw new Error('Failed to upload image');
+        const errorData = await response.json();
+        console.error('Server error response:', errorData); // Debug log
+        throw new Error(errorData.error || 'Failed to upload image');
       }
 
       const data = await response.json();
+      console.log('Server response:', data); // Debug log
+      const imagePath = data.path.startsWith('/') ? data.path : `/${data.path}`;
       
       // Send image message through WebSocket first
       if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN && currentRoom) {
-        console.log('Sending image message:', { roomId: currentRoom.id, imageUrl: data.path }); // Debug log
+        console.log('Sending image message:', { roomId: currentRoom.id, imageUrl: imagePath }); // Debug log
         wsRef.current.send(JSON.stringify({
           type: 'image',
           content: 'Sent an image',
-          imageUrl: data.path,
+          imageUrl: imagePath,
           username: username,
           roomId: currentRoom.id
         }));
@@ -391,13 +397,13 @@ function App() {
         username: username,
         type: 'image',
         timestamp: new Date(),
-        imageUrl: data.path
+        imageUrl: imagePath
       };
 
       setMessages(prev => [...prev, newMessage]);
     } catch (error) {
       console.error('Error uploading image:', error);
-      setError('Failed to upload image');
+      setError(error instanceof Error ? error.message : 'Failed to upload image');
     } finally {
       setIsUploading(false);
       if (imageInputRef.current) {
@@ -926,12 +932,19 @@ function App() {
                         {message.type === 'image' && message.imageUrl && (
                           <div className="mb-2 relative group">
                             <img 
-                              src={`${API_BASE_URL}${message.imageUrl}`}
+                              src={`${API_BASE_URL}${message.imageUrl.startsWith('/') ? message.imageUrl : `/${message.imageUrl}`}`}
                               alt="Shared image"
                               className="max-w-full rounded-xl shadow-md"
+                              onError={(e) => {
+                                console.error('Error loading image:', message.imageUrl);
+                                e.currentTarget.src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><rect width="100" height="100" fill="%23ccc"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="%23666">Image not found</text></svg>';
+                              }}
                             />
                             <button
-                              onClick={() => message.imageUrl && handleFileDownload(message.imageUrl, message.imageUrl.split('/').pop() || 'image')}
+                              onClick={() => message.imageUrl && handleFileDownload(
+                                message.imageUrl.startsWith('/') ? message.imageUrl : `/${message.imageUrl}`,
+                                message.imageUrl.split('/').pop() || 'image'
+                              )}
                               className="absolute bottom-3 right-3 bg-black/40 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-all duration-200 hover:bg-black/60 hover:scale-110"
                               title="Download image"
                             >
