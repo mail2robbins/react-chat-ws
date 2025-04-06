@@ -514,7 +514,7 @@ wss.on('connection', (ws) => {
             content: 'Failed to join room. Please try again.'
           }));
         }
-      } else if (data.type === 'message' || data.type === 'image' || data.type === 'pdf') {
+      } else if (data.type === 'message' || data.type === 'image' || data.type === 'pdf' || data.type === 'emoji') {
         // Get current room from clients Map and data
         const clientInfo = clients.get(ws);
         const roomId = data.roomId || clientInfo?.room;
