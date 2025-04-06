@@ -30,7 +30,7 @@ const API_LOGIN = import.meta.env.VITE_API_LOGIN || '/api/login';
 const API_ROOMS = import.meta.env.VITE_API_ROOMS || '/api/rooms';
 //const API_JOIN_ROOM = import.meta.env.VITE_API_JOIN_ROOM || '/api/rooms/join';
 //const API_LEAVE_ROOM = import.meta.env.VITE_API_LEAVE_ROOM || '/api/rooms/leave';
-const API_UPLOAD = import.meta.env.VITE_API_UPLOAD || '/upload';
+//const API_UPLOAD = import.meta.env.VITE_API_UPLOAD || '/upload';
 
 // WebSocket Events
 //const WS_EVENT_MESSAGE = import.meta.env.VITE_WS_EVENT_MESSAGE || 'message';
