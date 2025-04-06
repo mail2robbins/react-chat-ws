@@ -481,7 +481,7 @@ function App() {
   };
 
   const handleEmojiClick = (emojiObject: EmojiClickData) => {
-    if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+    if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN && currentRoom) {
       const newMessage: Message = {
         id: Date.now(),
         content: 'Sent an emoji',
@@ -499,7 +499,8 @@ function App() {
         type: 'emoji',
         content: 'Sent an emoji',
         emoji: emojiObject.emoji,
-        username: username
+        username: username,
+        roomId: currentRoom.id
       }));
     }
     setShowEmojiPicker(false);
