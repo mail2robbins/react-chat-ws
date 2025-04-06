@@ -416,29 +416,35 @@ function App() {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    console.log('Starting PDF upload:', { filename: file.name, size: file.size }); // Debug log
     setIsUploading(true);
     const formData = new FormData();
     formData.append('pdf', file);
 
     try {
-      const response = await fetch(`${API_BASE_URL}${API_UPLOAD}/pdf`, {
+      console.log('Sending PDF to server:', `${API_BASE_URL}/upload/pdf`); // Debug log
+      const response = await fetch(`${API_BASE_URL}/upload/pdf`, {
         method: 'POST',
         body: formData,
       });
 
       if (!response.ok) {
-        throw new Error('Failed to upload PDF');
+        const errorData = await response.json();
+        console.error('Server error response:', errorData); // Debug log
+        throw new Error(errorData.error || 'Failed to upload PDF');
       }
 
       const data = await response.json();
+      console.log('Server response:', data); // Debug log
+      const pdfPath = data.path.startsWith('/') ? data.path : `/${data.path}`;
       
       // Send PDF message through WebSocket first
       if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN && currentRoom) {
-        console.log('Sending PDF message:', { roomId: currentRoom.id, pdfUrl: data.path }); // Debug log
+        console.log('Sending PDF message:', { roomId: currentRoom.id, pdfUrl: pdfPath }); // Debug log
         wsRef.current.send(JSON.stringify({
           type: 'pdf',
-          content: 'Sent a PDF file',
-          pdfUrl: data.path,
+          content: 'Sent a PDF document',
+          pdfUrl: pdfPath,
           pdfName: file.name,
           username: username,
           roomId: currentRoom.id
@@ -448,18 +454,18 @@ function App() {
       // Add message to local state after successful send
       const newMessage: Message = {
         id: Date.now(),
-        content: 'Sent a PDF file',
+        content: 'Sent a PDF document',
         username: username,
         type: 'pdf',
         timestamp: new Date(),
-        pdfUrl: data.path,
+        pdfUrl: pdfPath,
         pdfName: file.name
       };
 
       setMessages(prev => [...prev, newMessage]);
     } catch (error) {
       console.error('Error uploading PDF:', error);
-      setError('Failed to upload PDF');
+      setError(error instanceof Error ? error.message : 'Failed to upload PDF');
     } finally {
       setIsUploading(false);
       if (pdfInputRef.current) {
@@ -469,6 +475,7 @@ function App() {
   };
 
   const handleFileDownload = async (url: string, filename: string) => {
+    console.log('Downloading file:', { url, filename }); // Debug log
     try {
       const response = await fetch(`${API_BASE_URL}${url}`);
       const blob = await response.blob();
@@ -952,13 +959,13 @@ function App() {
                             </button>
                           </div>
                         )}
-                        {message.type === 'pdf' && message.pdfUrl && (
+                        {message.type === 'pdf' && message.pdfName && (
                           <div className="mb-2 relative group">
                             <div className="flex items-center space-x-3 p-3 bg-white/20 rounded-xl shadow-md hover:shadow-lg transition-shadow duration-200 border border-white/30">
                               <span className="text-3xl">📄</span>
                               <span className="text-sm font-medium truncate">{message.pdfName}</span>
                               <button
-                                onClick={() => message.pdfUrl && handleFileDownload(message.pdfUrl, message.pdfName || 'document.pdf')}
+                                onClick={() => message.pdfName && handleFileDownload(`/uploads/${message.pdfName}`, message.pdfName || 'document.pdf')}
                                 className="ml-auto bg-gradient-to-r from-indigo-400 to-purple-400 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-all duration-200 hover:scale-110"
                                 title="Download PDF"
                               >

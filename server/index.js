@@ -96,6 +96,8 @@ async function initializeDatabase() {
         content TEXT NOT NULL,
         type VARCHAR(20) NOT NULL,
         image_url TEXT,
+        pdf_url TEXT,
+        pdf_name TEXT,
         emoji TEXT,
         created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
       );
@@ -522,14 +524,18 @@ wss.on('connection', (ws) => {
 
           // Send recent messages
           resultMessages.rows.reverse().forEach(message => {
-            ws.send(JSON.stringify({
+            const messageData = {
               type: message.type,
               content: message.content,
               username: message.username,
               roomId: message.room_id,
               timestamp: message.created_at,
-              imageUrl: message.image_url
-            }));
+              imageUrl: message.image_url,
+              pdfUrl: message.pdf_url,
+              pdfName: message.pdf_name,
+              emoji: message.emoji
+            };
+            ws.send(JSON.stringify(messageData));
           });
 
           // Broadcast user joined message to room members
@@ -624,8 +630,17 @@ wss.on('connection', (ws) => {
           
           // Save message to database
           await pool.query(
-            'INSERT INTO messages (room_id, username, content, type, image_url, emoji) VALUES ($1, $2, $3, $4, $5, $6)',
-            [roomId, currentUser, messageContent, messageType, imageUrl, data.type === 'emoji' ? data.emoji : null]
+            'INSERT INTO messages (room_id, username, content, type, image_url, pdf_url, pdf_name, emoji) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)',
+            [
+              roomId, 
+              currentUser, 
+              messageContent, 
+              messageType, 
+              imageUrl, 
+              data.type === 'pdf' ? data.pdfUrl : null,
+              data.type === 'pdf' ? data.pdfName : null,
+              data.type === 'emoji' ? data.emoji : null
+            ]
           );
           console.log('Message saved successfully'); // Debug log
 
