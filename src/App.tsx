@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import EmojiPicker, { EmojiClickData } from 'emoji-picker-react';
+import './App.css';
 
 export interface Room {
   id: number;
@@ -72,6 +73,8 @@ function App() {
   const [showCreateRoom, setShowCreateRoom] = useState(false);
   const [newRoomName, setNewRoomName] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [loadingMessage, setLoadingMessage] = useState('');
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -255,6 +258,9 @@ function App() {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
+      setIsLoading(true);
+      setLoadingMessage('Logging in...');
+      
       const response = await fetch(`${API_BASE_URL}${API_LOGIN}`, {
         method: 'POST',
         headers: {
@@ -279,6 +285,9 @@ function App() {
       localStorage.setItem('password', loginForm.password);
     } catch (error) {
       setError(error instanceof Error ? error.message : 'Login failed');
+    } finally {
+      setIsLoading(false);
+      setLoadingMessage('');
     }
   };
 
@@ -358,6 +367,8 @@ function App() {
 
     console.log('Starting image upload:', { filename: file.name, size: file.size }); // Debug log
     setIsUploading(true);
+    setIsLoading(true);
+    setLoadingMessage('Uploading image...');
     const formData = new FormData();
     formData.append('image', file);
 
@@ -406,6 +417,8 @@ function App() {
       setError(error instanceof Error ? error.message : 'Failed to upload image');
     } finally {
       setIsUploading(false);
+      setIsLoading(false);
+      setLoadingMessage('');
       if (imageInputRef.current) {
         imageInputRef.current.value = '';
       }
@@ -418,6 +431,8 @@ function App() {
 
     console.log('Starting PDF upload:', { filename: file.name, size: file.size }); // Debug log
     setIsUploading(true);
+    setIsLoading(true);
+    setLoadingMessage('Uploading PDF...');
     const formData = new FormData();
     formData.append('pdf', file);
 
@@ -468,6 +483,8 @@ function App() {
       setError(error instanceof Error ? error.message : 'Failed to upload PDF');
     } finally {
       setIsUploading(false);
+      setIsLoading(false);
+      setLoadingMessage('');
       if (pdfInputRef.current) {
         pdfInputRef.current.value = '';
       }
@@ -570,6 +587,9 @@ function App() {
         return;
       }
 
+      setIsLoading(true);
+      setLoadingMessage(`Joining room: ${room.name}...`);
+
       // First, join the room via HTTP
       const response = await fetch(`${API_BASE_URL}/api/rooms/${room.id}/join`, {
         method: 'POST',
@@ -631,6 +651,9 @@ function App() {
     } catch (error) {
       console.error('Error joining room:', error);
       setError(error instanceof Error ? error.message : 'Failed to join room. Please try again.');
+    } finally {
+      setIsLoading(false);
+      setLoadingMessage('');
     }
   };
 
@@ -675,6 +698,14 @@ function App() {
       setError(error instanceof Error ? error.message : 'Failed to leave room');
     }
   };
+
+   // Loading spinner component
+   const LoadingSpinner = () => (
+    <div className="loading-spinner-container">
+      <div className="loading-spinner"></div>
+      {loadingMessage && <div className="loading-message">{loadingMessage}</div>}
+    </div>
+  );
 
   if (!isLoggedIn) {
   return (
@@ -793,6 +824,7 @@ function App() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-violet-500 via-fuchsia-500 to-cyan-500 p-2 sm:p-4">
+    {isLoading && <LoadingSpinner />}
       {isLoggedIn && (
         <div className="flex flex-col sm:flex-row h-[calc(100vh-1rem)] sm:h-[calc(100vh-2rem)] bg-white/20 backdrop-blur-xl rounded-3xl shadow-2xl overflow-hidden border border-white/30">
           {/* Chat Rooms Screen */}
