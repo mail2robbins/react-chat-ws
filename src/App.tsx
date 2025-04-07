@@ -294,6 +294,8 @@ function App() {
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
+      setIsLoading(true);
+      setLoadingMessage('Registering user...');
       const response = await fetch(`${API_BASE_URL}${API_REGISTER}`, {
         method: 'POST',
         headers: {
@@ -314,6 +316,9 @@ function App() {
       setError('');
     } catch (error) {
       setError(error instanceof Error ? error.message : 'Registration failed');
+    } finally {
+      setIsLoading(false);
+      setLoadingMessage('');
     }
   };
 
@@ -793,7 +798,7 @@ function App() {
                   required
                 />
               </div>
-      <div>
+              <div>
                 <label className="block text-sm font-medium text-white/90 mb-1">Password</label>
                 <input
                   type="password"
